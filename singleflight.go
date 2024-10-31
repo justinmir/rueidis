@@ -39,16 +39,14 @@ func (c *call) Do(ctx context.Context, fn func() error) error {
 func (c *call) LazyDo(threshold time.Duration, fn func() error) {
 	c.mu.Lock()
 	ch := c.ch
-	if ch != nil {
+	if ch != nil || time.Now().Before(c.ts.Add(threshold)) {
 		c.mu.Unlock()
 		return
 	}
 	ch = make(chan struct{})
 	c.ch = ch
 	c.cn++
-	ts := c.ts
 	c.mu.Unlock()
-	time.Sleep(time.Until(ts.Add(threshold)))
 	go c.do(ch, fn)
 }
 
